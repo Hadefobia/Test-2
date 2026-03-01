@@ -1140,12 +1140,12 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 14px 22px;
+            padding: 14px 20px;
             border: 2px solid var(--border);
             border-radius: var(--radius);
             background: var(--bg-body);
             transition: all 0.2s;
-            min-width: 130px;
+            min-width: 100px;
         }
 
         .mode-option input:checked+.mode-label {
@@ -1155,7 +1155,7 @@
 
         .mode-label-title {
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             color: var(--text-main);
         }
 
@@ -1769,9 +1769,8 @@
         <!-- IMPORT SCREEN -->
         <div id="input-view">
             <div class="setup-card">
-                <h2 style="margin:0">Question Bank Import</h2>
-                <p style="color:var(--text-muted); font-size:0.9rem">Paste your JSON data below to begin your session.
-                </p>
+                <h2 style="margin:0 0 8px 0;">📋 Question Bank</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin:0 0 4px 0;">Paste your JSON below, choose a mode, then start. Press <kbd id="save-kbd" style="font-family:monospace; background:var(--bg-body); border:1px solid var(--border); border-radius:4px; padding:1px 5px; font-size:0.8rem;">Ctrl+S</kbd> during a quiz to save your progress.</p>
                 <textarea id="json-textarea" spellcheck="false" placeholder='[
   {
     "vignette": "Question...",
@@ -1781,39 +1780,39 @@
     "explanations": ["Exp A", "Exp B"...]
   }
 ]'></textarea>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:4px; flex-wrap:wrap;">
+                    <input type="text" id="search-filter" class="search-input" style="flex:1; max-width:100%; min-width:180px; margin:0;"
+                        placeholder="🔍 Filter by keyword..." oninput="updateSearchCount()">
+                    <label class="shuffle-label" style="flex-shrink:0;">
+                        <input type="checkbox" id="shuffle-check"> 🔀 Shuffle
+                    </label>
+                </div>
+                <span id="search-info" class="search-info" style="display:block; margin-bottom:12px;"></span>
                 <div class="mode-selector">
                     <label class="mode-option">
                         <input type="radio" name="quiz-mode" value="tutor" checked>
                         <div class="mode-label">
-                            <span class="mode-label-title">📖 Tutor</span>
-                            <span class="mode-label-desc">Instant feedback</span>
+                            <span class="mode-label-title">📖</span>
+                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-top:4px;">Tutor</span>
                         </div>
                     </label>
                     <label class="mode-option">
                         <input type="radio" name="quiz-mode" value="timed">
                         <div class="mode-label">
-                            <span class="mode-label-title">⏱️ Timed</span>
-                            <span class="mode-label-desc">1.5 min/question</span>
+                            <span class="mode-label-title">⏱️</span>
+                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-top:4px;">Timed</span>
                         </div>
                     </label>
                     <label class="mode-option">
                         <input type="radio" name="quiz-mode" value="untimed">
                         <div class="mode-label">
-                            <span class="mode-label-title">📝 Untimed</span>
-                            <span class="mode-label-desc">No timer, grade at end</span>
+                            <span class="mode-label-title">📝</span>
+                            <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); margin-top:4px;">Untimed</span>
                         </div>
                     </label>
                 </div>
-                <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="initQuiz()">Start Session</button>
-                </div>
-                <div class="setup-extras">
-                    <input type="text" id="search-filter" class="search-input"
-                        placeholder="🔍 Filter questions by keyword..." oninput="updateSearchCount()">
-                    <span id="search-info" class="search-info"></span>
-                    <label class="shuffle-label">
-                        <input type="checkbox" id="shuffle-check"> 🔀 Shuffle questions
-                    </label>
+                <div style="display: flex; justify-content: center; margin-top:8px;">
+                    <button class="btn btn-primary" style="padding:12px 36px; font-size:1rem;" onclick="initQuiz()">▶ Start Session</button>
                 </div>
             </div>
         </div>
@@ -1895,8 +1894,9 @@
                 </div>
             </div>
 
-            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
-                <button class="btn btn-outline" onclick="toggleResults()">Keep Reviewing</button>
+            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap:wrap;">
+                <button class="btn btn-outline" onclick="toggleResults()">Continue Reviewing</button>
+                <button class="btn btn-outline" onclick="toggleResults(); openReview();">📋 Review All</button>
                 <button class="btn btn-primary" onclick="resetQuiz()">New Quiz</button>
             </div>
         </div>
@@ -1986,6 +1986,12 @@
             const savedTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'light';
             document.body.setAttribute('data-theme', savedTheme);
             updateThemeIcon(savedTheme);
+
+            // Update save shortcut hint for Mac users
+            const saveKbd = document.getElementById('save-kbd');
+            if (saveKbd && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)) {
+                saveKbd.textContent = '⌘+S';
+            }
 
             // Global Ctrl+S listener (always active, even before quiz starts)
             document.addEventListener('keydown', (e) => {
@@ -2167,12 +2173,10 @@
             // Mode-specific setup
             const endBlockBtn = document.getElementById('end-block-btn');
             if (quizMode === 'timed') {
-                countdownTotal = Math.round(quizData.length * 90);
-                timerEl.classList.add('countdown');
-                timerEl.innerText = formatCountdown(countdownTotal);
+                timerEl.classList.remove('countdown');
                 timerRunning = true;
                 stats.startTime = Date.now();
-                startCountdown();
+                startTimer();
                 if (endBlockBtn) endBlockBtn.style.display = 'inline-flex';
             } else if (quizMode === 'untimed') {
                 timerEl.style.display = 'none';
@@ -2285,13 +2289,12 @@
                 openReview();
             } else {
                 showToolbar(true);
-                if (quizMode === 'timed' && sData.timerTime) {
-                    timerEl.classList.add('countdown');
-                    const parts = sData.timerTime.split(':');
-                    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                        countdownTotal = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-                        startCountdown();
-                    }
+                if (quizMode === 'timed') {
+                    // Resume upward timer
+                    timerRunning = true;
+                    pausedElapsed = (stats.totalTimeSeconds || 0) * 1000;
+                    stats.startTime = Date.now();
+                    startTimer();
                 } else if (quizMode === 'tutor') {
                     // Resume stop watch
                     timerRunning = true;
@@ -2310,7 +2313,7 @@
                 const el = document.getElementById(id);
                 if (el) el.style.display = visible ? (id === 'toolbar-sep' ? '' : 'flex') : 'none';
             });
-            // Hide pause in non-tutor modes (countdown has its own logic)
+            // Hide pause in untimed mode (no timer to pause)
             if (quizMode === 'untimed') {
                 const pauseBtn = document.getElementById('tool-pause');
                 if (pauseBtn) pauseBtn.style.display = 'none';
@@ -2515,7 +2518,7 @@
                     </div>
 
                     <div class="exp-list">
-                        ${q.explanations.map((exp, eIdx) => `
+                        ${(q.explanations || []).map((exp, eIdx) => `
                             <div class="exp-item ${eIdx === q.correctIndex ? 'is-correct' : ''}">
                                 <span class="exp-item-label">Option ${letters[eIdx]}${eIdx === q.correctIndex ? ' (Correct)' : ''}</span>
                                 <div class="exp-text">${formatMD(exp)}</div>
@@ -3185,6 +3188,11 @@
                     // Hide end block button
                     const endBtn = document.getElementById('end-block-btn');
                     if (endBtn) endBtn.style.display = 'none';
+
+                    // Show results toggle button
+                    const resultsBtn = document.getElementById('results-toggle-btn');
+                    if (resultsBtn) resultsBtn.style.display = 'flex';
+                    showToolbar(false);
 
                     openReview();
                 }
